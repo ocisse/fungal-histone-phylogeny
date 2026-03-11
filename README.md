@@ -1,4 +1,4 @@
-# Code and Analysis for: [Phyogenetics Of Fungal Histones]
+# Code and Analysis for: Phylogenetics Analysis Of Fungal Histones
 
 [![Paper DOI](https://img.shields.io/badge/Paper%20DOI-10.XXXX/journal.XXXXXX-blue)](https://doi.org/10.XXXX/journal.XXXXXX)
 [![Zenodo DOI](https://img.shields.io/badge/Zenodo-10.5281/zenodo.XXXXXXX-blue)](https://doi.org/10.5281/zenodo.XXXXXXX)
