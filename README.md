@@ -1,10 +1,10 @@
-# Code and Analysis for: [Your Paper Title Here]
+# Code and Analysis for: [Phyogenetics Of Fungal Histones]
 
 [![Paper DOI](https://img.shields.io/badge/Paper%20DOI-10.XXXX/journal.XXXXXX-blue)](https://doi.org/10.XXXX/journal.XXXXXX)
 [![Zenodo DOI](https://img.shields.io/badge/Zenodo-10.5281/zenodo.XXXXXXX-blue)](https://doi.org/10.5281/zenodo.XXXXXXX)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-This repository contains all the code, scripts, and workflows used to perform the large-scale phylogenetic analysis of fungal histones described in [**Your Last Name et al., Journal, Year**].
+This repository contains all the code, scripts, and workflows used to perform the large-scale phylogenetic analysis of fungal histones described in [**Cisse et al., Journal, Year**].
 
 The primary goal of this project was to analyze over 6,000 fungal proteomes to identify histone candidates, curate them, and build a robust large-scale phylogeny to investigate their evolutionary history, with a focus on CENP-A homologs.
 
