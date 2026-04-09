@@ -1,10 +1,10 @@
 # Code and Analysis for: Phylogenetics Analysis Of Fungal Histones
 
 [![Paper DOI](https://img.shields.io/badge/Paper%20DOI-10.XXXX/journal.XXXXXX-blue)](https://doi.org/10.XXXX/journal.XXXXXX)
-[![Zenodo DOI](https://img.shields.io/badge/Zenodo-10.5281/zenodo.XXXXXXX-blue)](https://doi.org/10.5281/zenodo.XXXXXXX)
+[![Zenodo DOI](https://img.shields.io/badge/Zenodo-10.5281/zenodo.19407961-blue)](https://doi.org/10.5281/zenodo.19407961)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-This repository contains all the code, scripts, and workflows used to perform the large-scale phylogenetic analysis of fungal histones described in [**Cisse et al., Journal, Year**].
+This repository contains all the code, scripts, and workflows used to perform the large-scale phylogenetic analysis of fungal histones described in [**Cisse et al., submitted, 2026**].
 
 The primary goal of this project was to analyze over 6,000 fungal proteomes to identify histone candidates, curate them, and build a robust large-scale phylogeny to investigate their evolutionary history, with a focus on CENP-A homologs.
 
@@ -53,7 +53,7 @@ Due to their size, all large data files are not stored in this GitHub repository
 
 All these datasets are permanently archived on **Zenodo**. The directory structure in the Zenodo archive mirrors the structure of this GitHub repository.
 
-**Zenodo Archive DOI:** [10.5281/zenodo.XXXXXXX](https://doi.org/10.5281/zenodo.XXXXXXX)
+**Zenodo Archive DOI:** [10.5281/zenodo.19407961](https://doi.org/10.5281/zenodo.19407961)
 
 To run the workflows, you must first download and place the data into the appropriate directories within this repository structure.
 
