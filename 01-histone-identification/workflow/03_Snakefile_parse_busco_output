@@ -1,0 +1,20 @@
+
+
+rule get_best_scoring_proteomes:
+  input:
+    busco_batch_summary = "/../../../../data/processed/BUSCO_data/All_Fungal_Proteomes_BUSCO_Output/batch_summary.txt"
+  output:
+    highest_scoring_proteomes = "/../../../../data/processed/Phylogeny_Analysis/Fungal_Proteomes_for_Hmmsearch/proteomes_for_hmmsearch.txt"
+  params:
+    extract_best_proteomes_script = "/../../../../src/scripts/python_scripts/extract_best_busco_proteomes.py"
+  script:
+    "{params.extract_best_proteomes_script}"
+
+rule separate_unique_proteome_files:
+  output:
+    best_proteome_files = "/../../../../data/raw/unique_fungal_proteome_files"
+  params:
+    best_proteomes = get_best_scoring_proteomes.output.highest_scoring_proteomes,
+    all_fungal_proteome_files_directory = "/../../../../data/raw/all_fungal_proteome_files"
+  shell:
+    "for file in {params.best_proteomes}; do find {params.all_fungal_proteome_files} -type f -name $file* -exec cp {{}} {output.best_proteome_files} \;;done"

@@ -1,0 +1,52 @@
+###
+ALIGNMENTS = [
+    "Canh3_alignment_Ascomycota",
+    "Canh3_alignment_Basidiomycota", # done
+    "Canh3_alignment_Blastocladiomycota",
+    "Canh3_alignment_Chytridiomycota",
+    "Canh3_alignment_Cryptomycota",
+    "Canh3_alignment_Microsporidia", # done
+    "Canh3_alignment_Mucoromycota",
+    "Canh3_alignment_Olpidiomycota", # too few
+    "Canh3_alignment_Zoopagomycota",  # done
+    "cenh3_alignment_Ascomycota",
+    "cenh3_alignment_Basidiomycota", # done
+    "cenh3_alignment_Blastocladiomycota",
+    "cenh3_alignment_Chytridiomycota", # too few
+    "cenh3_alignment_Cryptomycota", # too few
+    "cenh3_alignment_Microsporidia",
+    "cenh3_alignment_Mucoromycota",
+    "cenh3_alignment_Zoopagomycota",
+]
+
+rule all:
+    input:
+        expand("../../data/processed/phylogeny/histones/trees/iqtree/{aln}_nopartition.treefile", aln=ALIGNMENTS),
+        expand("../../data/processed/phylogeny/histones/trees/iqtree/{aln}_nopartition.rate", aln=ALIGNMENTS)
+
+
+rule pmsr_split_aln:
+    input:
+        aln = "../../data/processed/phylogeny/histones/alignments/alignment_split_by_subphylum/{aln}.fasta"
+    output:
+        treefile = "../../data/processed/phylogeny/histones/trees/iqtree/{aln}_nopartition.treefile",
+        rates = "../../data/processed/phylogeny/histones/trees/iqtree/{aln}_nopartition.rate"
+    threads: 6
+    params:
+        m = "MFP",
+        b = "1000",
+        a = "1000",
+        prefix = "../../data/processed/phylogeny/histones/trees/iqtree/{aln}_nopartition"
+    shell:
+        """
+        ../tools/iqtree-3.0.1-Linux/bin/iqtree3 \
+            -s {input.aln} \
+            -m {params.m} \
+            -B {params.b} \
+            -alrt {params.a} \
+            -wsr \
+            -nt AUTO \
+            -v \
+            --prefix {params.prefix} \
+            --undo
+        """

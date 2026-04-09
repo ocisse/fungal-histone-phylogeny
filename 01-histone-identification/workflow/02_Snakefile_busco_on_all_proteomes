@@ -1,0 +1,31 @@
+
+#
+rule copy_proteome_files:
+  input:
+    proteomes_directory = "../../../data/raw/all_fungal_proteomes/ncbi_dataset/data"
+  output:
+    destination_directory = "../../../data/raw/all_fungal_proteome_files"
+  shell:
+    r"""
+    destination={output.destination_directory}
+    find {input.proteomes_directory} -maxdepth 1 -type d -name "*" -exec sh -c '
+      for dir; do
+        if [ -f "$dir/protein.faa" ]; then
+          cp "$dir/protein.faa" "$1/$(basename "$dir")_protein.faa"
+        fi
+      done
+    ' sh "$destination" {{}} +
+    """
+
+
+rule run_busco_on_ncbi_proteomes:
+  input: 
+    proteomes = "../../../data/raw/all_fungal_proteome_files"
+  output: 
+    busco_output_directory = directory("../../../data/processed/BUSCO_data/All_Fungal_Proteomes_BUSCO_Output")
+  params:
+    lineage = "eukaryota_obd10"
+  shell:
+    """
+    busco -i {input.proteomes} -m proteins -l {params.lineage} --out {output.busco_output_directory}
+    """

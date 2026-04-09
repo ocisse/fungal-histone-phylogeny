@@ -1,0 +1,305 @@
+###
+rule iqtree_HFD:
+    input:
+        "../../data/processed/phylogeny/histones/alignments/Histone_Curated_Alignment_Unique_Ids_HFD.fasta"
+    output:
+        treefile = "../../data/processed/phylogeny/histones/HFD_no_partition.treefile",
+        log = "../../data/processed/phylogeny/histones/HFD_no_partition.log",
+        iqtree = "../../data/processed/phylogeny/histones/HFD_no_partition.iqtree"
+    threads: 12
+    params:
+        m = "MFP",
+        b = "1000",
+        a = "1000",
+        prefix = "../../data/processed/phylogeny/histones/HFD_no_partition"
+    shell:
+        """
+        ../tools/iqtree-3.0.1-Linux/bin/iqtree3 \
+            -s {input} \
+            -m {params.m} \
+            -B {params.b} \
+            -alrt {params.a} \
+            -nt {threads} \
+            -v \
+            --prefix {params.prefix}
+        """
+
+rule iqtree_Nterm:
+    input:
+        "../../data/processed/phylogeny/histones/alignments/Histone_Curated_Alignment_Unique_Ids_NTERM_revised.fasta"
+    output:
+        treefile = "../../data/processed/phylogeny/histones/NTERM_no_partition.treefile",
+        log = "../../data/processed/phylogeny/histones/NTERM_no_partition.log",
+        iqtree = "../../data/processed/phylogeny/histones/NTERM_no_partition.iqtree"
+    threads: 6
+    params:
+        m = "MFP",
+        b = "1000",
+        a = "1000",
+        prefix = "../../data/processed/phylogeny/histones/NTERM_no_partition"
+    shell:
+        """
+        ../tools/iqtree-3.0.1-Linux/bin/iqtree3 \
+            -s {input} \
+            -m {params.m} \
+            -B {params.b} \
+            -alrt {params.a} \
+            -nt AUTO \
+            -v \
+            --prefix {params.prefix}
+        """
+
+### need for topology testing 
+# testing polyphyly of the N-tail 
+# first generate a constrainted tree for the same alignment (see "plot_tree.qmd")
+# going to skip the bootstrap, too costly - ran for 7 days and 
+# I 'll just reuse the model from the unconstrained "VT+R7' and bootstraps are not needed for topology testing
+
+rule iqtree_Nterm_constrained:
+    input:
+        aln = "../../data/processed/phylogeny/histones/NTERM_IQTREE/topology_testing/Histone_Curated_Alignment_Unique_Ids_NTERM_revised_CenH3_shared_sequences_NR.fasta",
+        cons = "../../data/processed/phylogeny/histones/NTERM_IQTREE/topology_testing/sptree_pruned_shared_only.nwk" # constrained from species tree
+    output:
+        treefile = "../../data/processed/phylogeny/histones/NTERM_IQTREE/topology_testing/NTERM_constrained_no_boot.treefile",
+        log = "../../data/processed/phylogeny/histones/NTERM_IQTREE/topology_testing/NTERM_constrained_no_boot.log",
+        iqtree = "../../data/processed/phylogeny/histones/NTERM_IQTREE/topology_testing/NTERM_constrained_no_boot.iqtree"
+    threads: 6
+    params:
+        m = "VT+R7",
+        prefix = "../../data/processed/phylogeny/histones/NTERM_IQTREE/topology_testing/NTERM_constrained_no_boot"
+    shell:
+        """
+        ../tools/iqtree-3.0.1-Linux/bin/iqtree3 \
+            -s {input.aln} \
+            -g {input.cons} \
+            -m {params.m} \
+            -nt AUTO \
+            -v \
+            --prefix {params.prefix}
+        """
+
+rule iqtree_Nterm_constrained_sub:
+    input:
+        aln = "../../data/processed/phylogeny/histones/NTERM_IQTREE/topology_testing/Histone_Curated_Alignment_Unique_Ids_NTERM_revised_CenH3_shared_sequences_NR.fasta",
+        cons = "../../data/processed/phylogeny/histones/NTERM_IQTREE/topology_testing/subsampled_sptree_pruned_shared_only.nwk" # subsampled (50) matiching tip 
+    output:
+        treefile = "../../data/processed/phylogeny/histones/NTERM_IQTREE/topology_testing/NTERM_subconstrained_no_boot.treefile",
+        log = "../../data/processed/phylogeny/histones/NTERM_IQTREE/topology_testing/NTERM_subconstrained_no_boot.log",
+        iqtree = "../../data/processed/phylogeny/histones/NTERM_IQTREE/topology_testing/NTERM_subconstrained_no_boot.iqtree"
+    threads: 6
+    params:
+        m = "VT+R7",
+        prefix = "../../data/processed/phylogeny/histones/NTERM_IQTREE/topology_testing/NTERM_subconstrained_no_boot"
+    shell:
+        """
+        ../tools/iqtree-3.0.1-Linux/bin/iqtree3 \
+            -s {input.aln} \
+            -g {input.cons} \
+            -m {params.m} \
+            -nt AUTO \
+            -v \
+            --prefix {params.prefix}
+        """
+
+rule iqtree_Nterm_unconstrained:
+    input:
+        aln = "../../data/processed/phylogeny/histones/NTERM_IQTREE/topology_testing/Histone_Curated_Alignment_Unique_Ids_NTERM_revised_CenH3_shared_sequences_NR.fasta",
+    output:
+        treefile = "../../data/processed/phylogeny/histones/NTERM_IQTREE/topology_testing/NTERM_unconstrained_no_boot.treefile",
+        log = "../../data/processed/phylogeny/histones/NTERM_IQTREE/topology_testing/NTERM_unconstrained_no_boot.log",
+        iqtree = "../../data/processed/phylogeny/histones/NTERM_IQTREE/topology_testing/NTERM_unconstrained_no_boot.iqtree"
+    threads: 6
+    params:
+        m = "VT+R7",
+        prefix = "../../data/processed/phylogeny/histones/NTERM_IQTREE/topology_testing/NTERM_unconstrained_no_boot"
+    shell:
+        """
+        ../tools/iqtree-3.0.1-Linux/bin/iqtree3 \
+            -s {input.aln} \
+            -m {params.m} \
+            -nt AUTO \
+            -v \
+            --prefix {params.prefix}
+        """
+
+
+# topology test
+#iqtree3 -s alignment.fasta -z unconstrained.treefile constrained_no_boot.treefile --test all --prefix topology_test
+
+rule combine_nterm_cons_and_uncons_tree:
+    input:
+      cons = rules.iqtree_Nterm_constrained.output.treefile,
+      cons_sub = rules.iqtree_Nterm_constrained_sub.output.treefile,
+      uncons = rules.iqtree_Nterm_unconstrained.output.treefile,
+      #cons = "../../data/processed/phylogeny/histones/NTERM_IQTREE/topology_testing/NTERM_unconstrained_no_boot.treefile",
+    #  uncons = "../../data/processed/phylogeny/histones/NTERM_IQTREE/topology_testing/NTERM_unconstrained_no_boot.treefile",
+    output:
+       temp("../../data/processed/phylogeny/histones/NTERM_IQTREE/topology_testing/trees_to_compare.nwk")
+    shell:
+      "cat {input.cons} {input.cons_sub} {input.uncons} > {output}"
+
+rule Nterm_topology_testing:
+    input:
+        aln = "../../data/processed/phylogeny/histones/NTERM_IQTREE/topology_testing/Histone_Curated_Alignment_Unique_Ids_NTERM_revised_CenH3_shared_sequences_NR.fasta",
+        trees = rules.combine_nterm_cons_and_uncons_tree.output
+    output:
+        test = "../../data/processed/phylogeny/histones/NTERM_IQTREE/topology_testing/NTERM_topology_test.iqtree"
+    threads: 6
+    params:
+        n = "0",
+        zb = "10000",
+        prefix = "../../data/processed/phylogeny/histones/NTERM_IQTREE/topology_testing/NTERM_topology_test"
+    shell:
+        """
+        ../tools/iqtree-3.0.1-Linux/bin/iqtree3 \
+            -s {input.aln} \
+            -z {input.trees} \
+            -n {params.n} \
+            -zb {params.zb} \
+            -zw \
+            -au \
+            -nt AUTO \
+            -v \
+            --prefix {params.prefix} \
+            --undo
+        """
+
+### same for HFD
+rule iqtree_HFD_constrained:
+    input:
+        aln = "../../data/processed/phylogeny/histones/HFD_IQTREE3/topology_testing/Histone_Curated_Alignment_Unique_Ids_cenH3_HFD_shared_sequences_NR.fasta",
+        cons = "../../data/processed/phylogeny/histones/HFD_IQTREE3/topology_testing/sptree_pruned_shared_only.nwk" # species tree w matiching tips
+    output:
+        treefile = "../../data/processed/phylogeny/histones/HFD_IQTREE3/topology_testing/HFD_constrained_no_boot.treefile",
+        log = "../../data/processed/phylogeny/histones/HFD_IQTREE3/topology_testing/HFD_constrained_no_boot.log",
+        iqtree = "../../data/processed/phylogeny/histones/HFD_IQTREE3/topology_testing/HFD_constrained_no_boot.iqtree",
+    threads: 6
+    params:
+        m = "Q.INSECT+F+R10",
+        prefix = "../../data/processed/phylogeny/histones/HFD_IQTREE3/topology_testing/HFD_constrained_no_boot"
+    shell:
+        """
+        ../tools/iqtree-3.0.1-Linux/bin/iqtree3 \
+            -s {input.aln} \
+            -g {input.cons} \
+            -m {params.m} \
+            -nt AUTO \
+            -v \
+            --prefix {params.prefix}
+        """
+
+rule iqtree_HFD_constrained_sub:
+    input:
+        aln = "../../data/processed/phylogeny/histones/HFD_IQTREE3/topology_testing/Histone_Curated_Alignment_Unique_Ids_cenH3_HFD_shared_sequences_NR.fasta",
+        cons = "../../data/processed/phylogeny/histones/HFD_IQTREE3/topology_testing/subsampled_sptree_pruned_shared_only.nwk" # subsampled (50) matiching tip 
+    output:
+        treefile = "../../data/processed/phylogeny/histones/HFD_IQTREE3/topology_testing/HFD_subconstrained_no_boot.treefile",
+        log = "../../data/processed/phylogeny/histones/HFD_IQTREE3/topology_testing/HFD_subconstrained_no_boot.log",
+        iqtree = "../../data/processed/phylogeny/histones/HFD_IQTREE3/topology_testing/HFD_subconstrained_no_boot.iqtree",
+    threads: 6
+    params:
+        m = "Q.INSECT+F+R10",
+        prefix = "../../data/processed/phylogeny/histones/HFD_IQTREE3/topology_testing/HFD_subconstrained_no_boot"
+    shell:
+        """
+        ../tools/iqtree-3.0.1-Linux/bin/iqtree3 \
+            -s {input.aln} \
+            -g {input.cons} \
+            -m {params.m} \
+            -nt AUTO \
+            -v \
+            --prefix {params.prefix}
+        """
+
+rule iqtree_HFD_unconstrained:
+    input:
+        aln = rules.iqtree_HFD_constrained.input.aln
+    output:
+        treefile = "../../data/processed/phylogeny/histones/HFD_IQTREE3/topology_testing/HFD_unconstrained_no_boot.treefile",
+        log = "../../data/processed/phylogeny/histones/HFD_IQTREE3/topology_testing/HFD_unconstrained_no_boot.log",
+        iqtree = "../../data/processed/phylogeny/histones/HFD_IQTREE3/topology_testing/HFD_unconstrained_no_boot.iqtree",
+    threads: 6
+    params:
+        m = "Q.INSECT+F+R10",
+        prefix = "../../data/processed/phylogeny/histones/HFD_IQTREE3/topology_testing/HFD_unconstrained_no_boot"
+    shell:
+        """
+        ../tools/iqtree-3.0.1-Linux/bin/iqtree3 \
+            -s {input.aln} \
+            -m {params.m} \
+            -nt AUTO \
+            -v \
+            --prefix {params.prefix}
+        """
+
+rule combine_hfd_cons_and_uncons_tree:
+    input:
+      cons = rules.iqtree_HFD_constrained.output.treefile,
+      cons_sub = rules.iqtree_HFD_constrained_sub.output.treefile,
+      uncons = rules.iqtree_HFD_unconstrained.output.treefile,
+    output:
+      temp("../../data/processed/phylogeny/histones/HFD_IQTREE3/topology_testing/trees_to_compare.nwk")
+    shell:
+      "cat {input.cons} {input.cons_sub} {input.uncons} > {output}"
+
+rule HFD_topology_testing:
+    input:
+        aln = rules.iqtree_HFD_constrained.input.aln,
+        trees = rules.combine_hfd_cons_and_uncons_tree.output
+    output:
+        test="../../data/processed/phylogeny/histones/HFD_IQTREE3/topology_testing/HFD_topology_test.iqtree"
+    threads: 6
+    params:
+        n = "0",
+        zb = "10000",
+        prefix =  "../../data/processed/phylogeny/histones/HFD_IQTREE3/topology_testing/HFD_topology_test"
+
+    shell:
+        """
+        ../tools/iqtree-3.0.1-Linux/bin/iqtree3 \
+            -s {input.aln} \
+            -z {input.trees} \
+            -n {params.n} \
+            -zb {params.zb} \
+            -zw \
+            -au \
+            -nt AUTO \
+            -v \
+            --prefix {params.prefix} 
+          """
+
+# had to reowrk the names in R (see plot_tree.qmd)
+rule combine_tree_full_with_wo_partition:
+    input:
+      wp = "../../data/processed/phylogeny/histones/TopologyTesting/IQTREE_FULL/Histone_Iqtree_Partition_LATEST_For_Ousmane_cleanedForTopology.treefile",
+      wop = "../../data/processed/phylogeny/histones/TopologyTesting/IQTREE_FULL/Iqtree3_Histone_Curated_NoPartitions_cleanedForTopology.treefile"
+    output:
+      "../../data/processed/phylogeny/histones/TopologyTesting/IQTREE_FULL/histones.trees"
+    shell:
+      "cat {input.wp} {input.wop} > {output}"
+
+rule full_partition_topology_testing:
+    input:
+        aln = "../../data/processed/phylogeny/histones/TopologyTesting/IQTREE_FULL/Histone_Curated_Alignment_Unique_Ids_cleanedForTopology.fasta",
+        trees = rules.combine_tree_full_with_wo_partition.output
+    output:
+        test = "../../data/processed/phylogeny/histones/TopologyTesting/IQTREE_FULL/topology_test.iqtree"
+    threads: 6
+    params:
+        n = "0",
+        zb = "10000",
+        prefix = "../../data/processed/phylogeny/histones/TopologyTesting/IQTREE_FULL/topology_test"
+    shell:
+        """
+        ../tools/iqtree-3.0.1-Linux/bin/iqtree3 \
+            -s {input.aln} \
+            -z {input.trees} \
+            -n {params.n} \
+            -zb {params.zb} \
+            -zw \
+            -au \
+            -nt AUTO \
+            -v \
+            --prefix {params.prefix} \
+            --undo
+        """

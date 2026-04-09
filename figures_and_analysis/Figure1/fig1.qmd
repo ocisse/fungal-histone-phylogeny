@@ -1,0 +1,178 @@
+---
+title: "fig1"
+format: html
+editor: visual
+---
+
+### TBD: Clarify
+
+\*\*Get Taxon ID (see py scripts - TBD)
+
+**Get Taxonomy info from species name (this work but do this once - take forever)**
+
+```{r}
+#| eval: false
+#| include: false
+library(xml2)
+
+get_phylum_from_taxid <- function(taxid) {
+  tryCatch({
+    xml_data <- entrez_fetch(db = "taxonomy", id = taxid, rettype = "xml")
+    doc <- read_xml(xml_data)
+    lineage <- xml_text(xml_find_first(doc, "//Lineage"))
+    
+    if (is.na(lineage) || lineage == "") return("Uknown")
+    
+    ranks <- strsplit(lineage, ";\\s*")[[1]]
+    
+    # Known fungal phyla (standard set)
+    fungal_phyla <- c("Ascomycota", "Basidiomycota", "Blastocladiomycota",
+                      "Chytridiomycota", "Cryptomycota", "Microsporidia",
+                      "Mucoromycota", "Olpidiomycota", "Zoopagomycota")
+
+    match <- intersect(fungal_phyla, ranks)
+    if (length(match) > 0) {
+      return(match[1])
+    } else {
+      return("Uknown")
+    }
+  }, error = function(e) {
+    warning(paste("Error fetching taxonomy for TaxID", taxid, ":", conditionMessage(e)))
+    return("Uknown")
+  })
+}
+
+# test 
+get_phylum_from_taxid("55514")
+
+# Apply to all rows
+info$TaxID <- sapply(info$Species, get_taxid_from_species)
+#info$Subphylum <- sapply(info$TaxID, get_phylum_from_taxid)
+
+# First: Set Subphylum to NA
+info$Subphylum <- NA
+
+# Apply only to rows with non-NA TaxID
+valid_indices <- which(!is.na(info$TaxID))
+#info$Subphylum[valid_indices] <- sapply(info$TaxID[valid_indices], get_phylum_from_taxid)
+
+write.csv(info[, c("SpecID", "Subphylum")], "taxonomy_mapping.csv", row.names = FALSE, quote = FALSE)
+
+```
+
+### panel B
+
+```{r}
+
+library(ape)
+library(phytools)
+
+sptree <- read.tree("tree/Species_Tree_With_tags.treefile")
+
+# Midpoint root the tree
+tree_mid <- midpoint.root(sptree)
+
+taxonomy <- read.csv("metadata/taxonomy_mapping.csv", stringsAsFactors = FALSE)
+
+## Map Subphylum and Colors to Clean Labels
+
+# Map SpecID to Subphylum
+subphylum_map <- setNames(taxonomy$Subphylum, taxonomy$SpecID)
+
+# Get subphylum for each tip
+tip_subphyla <- subphylum_map[tree_mid$tip.label]
+
+
+# Define colors
+phyla_colors <- c(
+  "Ascomycota" = "red",
+  "Basidiomycota" = "blue",
+  "Blastocladiomycota" = "yellow",
+  "Chytridiomycota" = "purple",
+  "Cryptomycota" = "orange",
+  "Microsporidia" = "pink",
+  "Mucoromycota" = "darkgreen",
+  "Olpidiomycota" = "violet",
+  "Zoopagomycota" = "lightgreen",
+  "Uknown" = "black"
+)
+
+# Assign colors
+tip_colors <- phyla_colors[tip_subphyla]
+tip_colors[is.na(tip_colors)] <- "black"
+
+# Step 3: Plot with Clean Labels and Colors
+#plotTree(tree, type = "fan", fsize = 0.5, tip.color = tip_colors)
+plot.phylo(tree_mid, 
+           type = "fan",
+           tip.color = tip_colors,
+           cex = 0.2, 
+           no.margin = TRUE)
+legend("topright", legend = names(phyla_colors), fill = phyla_colors, cex = 0.6, border = NA)
+
+#pdf("Species_Tree.treefile.pdf")
+#plot.phylo(tree_mid, 
+#           type = "fan",
+#           tip.color = tip_colors,
+#           cex = 0.2, 
+#           no.margin = TRUE)
+#legend("topright", legend = names(phyla_colors), fill = phyla_colors, cex = 0.6, border = NA)
+#dev.off()
+
+```
+
+### panel D
+
+```{r}
+# Load required library
+library(ggplot2)
+library(dplyr)
+
+# Read data
+data <- read.csv("metadata/histone_class_taxonomy_mapping_revised.csv", stringsAsFactors = FALSE)
+
+# Count ProtIDs by Subphylum
+counts <- data %>%
+  group_by(Subphylum) %>%
+  summarise(Count = n()) %>%
+  ungroup()
+
+# Separate NA and non-NA, then combine with NA at end
+counts_no_na <- counts %>% 
+  filter(!is.na(Subphylum) & Subphylum != "NA") %>%
+  arrange(desc(Count))
+
+counts_na <- counts %>% 
+  filter(is.na(Subphylum) | Subphylum == "NA")
+
+counts <- bind_rows(counts_no_na, counts_na)
+
+# Create factor with this exact order
+counts$Subphylum <- factor(counts$Subphylum, 
+                           levels = counts$Subphylum)
+
+# Create barplot
+ggplot(counts, aes(x = Subphylum, y = Count)) +
+  geom_bar(stat = "identity", fill = "#A7C7E7", color = "black", width = 0.7) +
+  geom_text(aes(label = Count), hjust = -0.3, size = 4, fontface = "bold") +
+  coord_flip() +
+  scale_x_discrete(limits = rev(levels(counts$Subphylum))) +  # Reverse for coord_flip
+  labs(title = "Number of Proteins by Subphylum",
+       x = "Subphylum",
+       y = "Count of ProtIDs") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    axis.title = element_text(size = 12, face = "bold"),
+    axis.text = element_text(size = 11),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+
+# Save plot
+#ggsave("protid_by_subphylum.pdf", width = 8, height = 6, dpi = 300)
+#ggsave("protid_by_subphylum.png", width = 8, height = 6, dpi = 300)
+
+# Print counts table
+print(counts)
+```

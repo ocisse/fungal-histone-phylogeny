@@ -1,0 +1,11 @@
+
+
+rule extract_orthogroups:
+  input:
+    orthogroup_dictionary = "../../../../data/processed/OrthoFinder_Data/orthogroups_Feb13/orthogroups_feb13.tsv",
+    s_pombe_protein_ids = "../../../../data/processed/OrthoFinder_Data/orthogroups_Feb13/SPOM",
+    output_directory = "../../../../data/processed/OrthoFinder_Data/orthogroups_Feb13"
+  params:
+    python_script = "extract_orthogroups.py"
+  shell:
+    "python {params.python_script} {input.orthogroup_dictionary} {input.s_pombe_protein_ids} {input.output_directory}"

@@ -1,0 +1,48 @@
+# Input files
+msa: "/home/cisseoh/PCP_genomics/KINETO/data/processed/phylogeny/histones/alignments/Histone_Curated_Alignment_Unique_Ids_cenH3.fasta"
+
+# PDB structure
+pdb:
+  id: "2L5A"  # Saccharomyces cerevisiae CSE4
+  chain: "A"  # CENP-A chain
+  h4_chain: "E"
+  dna_chains: ["I", "J"]
+
+# Output directory
+outdir: "/home/cisseoh/PCP_genomics/KINETO/data/processed/conservation/results"
+
+# Analysis parameters
+conservation:
+  method: "shannon"  # shannon or sum_of_pairs
+  gap_threshold: 0.5  # Ignore columns with >50% gaps
+  
+alignment:
+  algorithm: "globalxx"  # BioPython pairwise2 method
+  min_identity: 50  # Minimum % identity to accept alignment
+
+# CATD region (approximate)
+catd:
+  start: 68
+  end: 86
+  search_motif: "MGFPVRVM"
+
+# Search keywords
+keywords:
+  spombe: ["pombe", "schizosaccharomyces"]
+  cenpa: ["cenh3", "cenpa", "cnp1"]
+
+# Visualization
+visualization:
+  colormap: "blue:white:red"
+  catd_color: "red"
+  h4_color: "lightblue"
+  dna_color: "tan"
+  image_size:
+    width: 2400
+    height: 1800
+    supersample: 4
+
+# Resource limits
+resources:
+  download_pdb: 1  # Max parallel PDB downloads
+  conservation: 4  # Threads for conservation calculation

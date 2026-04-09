@@ -1,0 +1,14 @@
+
+##
+
+rule run_iqtree2:
+  input:
+    histone_h3_msa = "../../../../data/processed/Phylogeny_Analysis/Histones/Alignments/OC_H3_Alignment_dedup_final.fasta",
+    histone_partitions = "../../../../data/processed/Phylogeny_Analysis/Histones/Alignments/H3_Partitions.txt"
+  output:
+    tree_directory = directory("Histone_Iqtree_Partitioned")
+  params:
+    model = "MFP+MERGE", bootstrap = 1000, alrt = 1000, nt = "AUTO", prefix = "IqTreePartitioned", iqtree_executable = "../../../../data/processed/Phylogeny_Analysis/IqTree3/iqtree-3.0.0-Linux-intel/bin/iqtree3"
+  shell:
+    """./{iqtree_executable} -s {input.histone_h3_msa} -m {params.model} -p {input.histone_partitions} -B {params.bootstrap} -alrt {params.alrt} -nt {params.nt} -v --prefix {params.prefix}
+    mv {params.prefix}.* {output.tree_directory}"""

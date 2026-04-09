@@ -1,0 +1,55 @@
+---
+title: "Fig2"
+format: html
+editor: visual
+---
+
+### panel 2B
+
+Generate MSA figure
+
+```{bash}
+CIAlign --infile Histone_Curated_Alignment_Unique_Ids_HFD.fasta --outfile HFD --plot_consensus_similarity --plot_format svg --plot_similarity_palette viridis
+```
+
+### Ccmpute stats
+
+```{python}
+python alignment_identity.py Histone_Curated_Alignment_Unique_Ids_NTERM_revised.fasta
+```
+
+### panel 2C
+
+```{r}
+# Load required package
+library(ggplot2)
+
+# Read the rate table
+tab <- read.table("panel_C/Histone_Curated_Alignment_Unique_Ids_cenH3_nopartition.rate", header = TRUE)
+
+# Preview the first few rows
+#head(tab)
+
+# Check column names and rename if needed
+# If column names are not "Site" and "Rate", set them manually:
+# colnames(tab) <- c("Site", "Rate")
+
+# Add site numbers if not included
+if (!"Site" %in% colnames(tab)) {
+  tab$Site <- seq_len(nrow(tab))
+  colnames(tab)[1] <- "Rate"
+}
+
+# Plot using ggplot2
+ggplot(tab, aes(x = Site, y = Rate)) +
+  geom_line(color = "steelblue") +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "gray50") +
+  labs(
+    title = "CenH3 (full no partition) \nPosterior Mean Site-Specific Substitution Rates",
+    x = "Site Position",
+    y = "Relative Rate"
+  ) +
+  theme_minimal(base_size = 14)
+
+#ggsave("sites_rates/CenH3_wo_partition_site_rates_plot.pdf", width = 10, height = 4)
+```

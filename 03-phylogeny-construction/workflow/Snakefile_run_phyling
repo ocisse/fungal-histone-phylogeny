@@ -1,0 +1,30 @@
+
+#
+rule phyling_align:
+  input:
+    proteomes = "../../../data/raw/unique_fungal_proteome_files",
+    hmms = "../../../data/processed/BUSCO_data/busco_downloads/lineages/eukaryota_odb10/hmms"
+  output:
+    alignments = directory("../../../data/processed/PHYling/PHYling_align_output")
+  shell:
+    "phyling align -I {input.proteomes} -o {output.alignments} -m {input.hmms}"
+
+rule phyling_filter:
+  input:
+    alignments = rules.phyling_align.output.alignments
+  output:
+    filtered_alignments = directory("../../../data/processed/PHYling/PHYling_filtering_output")
+  params:
+    num_toverr = 20, threads = 12
+  shell:
+    "phyling filter -I {input.alignments} -n {params.num_toverr} -t {params.threads} -o {output.filtered_alignments}"
+
+rule phyling_iqtree:
+  input:
+    selected_msas = rules.phyling_filter.output.filtered_alignments
+  output:
+    tree = directory("../../../data/processed/PHYling/PHYling_iqtree_output")
+  params:
+    model = "iqtree", threads = 16
+  shell:
+    "phyling tree -I {input.selected_msas} -M {params.model} -t {params.threads} -o {output.tree} -f -c -v -p"

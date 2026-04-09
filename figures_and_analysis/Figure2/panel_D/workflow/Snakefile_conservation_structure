@@ -1,0 +1,36 @@
+"""
+Snakemake pipeline for mapping MSA conservation onto protein structure
+"""
+
+import os
+
+# Load configuration
+configfile: "../config/config_conservation.yaml"
+
+# Define variables from config
+OUTDIR = config["outdir"]
+PDB_ID = config["pdb"]["id"]
+
+# Wildcard constraints (if needed for future extensions)
+wildcard_constraints:
+    pdb_id = "[A-Z0-9]+"
+
+# Final outputs
+rule all:
+    input:
+        f"{OUTDIR}/chimerax/conservation.defattr",
+        f"{OUTDIR}/chimerax/visualize.cxc",
+        f"{OUTDIR}/stats/conservation_stats.txt",
+        # f"{OUTDIR}/figures/cnp1_conservation.png"  # Comment out if no ChimeraX
+
+# Include module rules
+include: "../rules/conservation.smk"
+include: "../rules/alignment.smk"
+include: "../rules/visualization.smk"
+
+# Clean rule
+rule clean:
+    shell:
+        """
+        rm -rf {OUTDIR}
+        """

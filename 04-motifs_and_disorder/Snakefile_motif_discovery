@@ -1,0 +1,160 @@
+###
+
+configfile: "rules/config.yaml"
+
+rule dealign:
+    input:
+        "../../data/processed/phylogeny/histones/alignments/Histone_Curated_Alignment_Unique_Ids_NTERM_revised.fasta"
+    output:
+        "../../data/processed/phylogeny/histones/motifs/clustering/CenH3_NTERM_dealigned.fasta"
+    shell:
+      """
+      python ../scripts/dealign_fasta.py {input} {output}
+      """
+
+
+# step1:	Clusters sequences
+
+#module load mmseqs
+rule cluster:
+    input:
+        rules.dealign.output
+    output:
+        "../../data/processed/phylogeny/histones/motifs/clustering/CenH3_NTERM"
+    threads: 4
+    params:
+        tmpdir = config["tmpdir"],
+        id = "0.4",
+        c = "0.4",
+        cov = "0"
+    shell:
+        """
+          touch {output} &&
+          mmseqs easy-cluster {input} {output} {params.tmpdir} --min-seq-id {params.id} -c {params.c} --cov-mode {params.cov} --threads {threads}
+        """
+### overall MMSEQS is not optmial for short sequences, it failed to cluster known sequences (i.e. CENP-A from fission yeasts)
+# module load cd-hit
+
+rule cluster_cdhit:
+    input:
+        rules.dealign.output
+    output:
+        "../../data/processed/phylogeny/histones/motifs/clustering/CenH3_NTERM_CDHIT"
+    threads: 4
+    params:
+        tmpdir = config["tmpdir"],
+        id = "0.6",
+        de = "0",
+        w = "3" # word size
+    shell:
+        """
+          touch {output} &&
+          cd-hit -i {input} -o {output} -c {params.id} -d {params.de} -n {params.w}  -T {threads}
+        """
+# much better
+
+# Extracts alignments per cluster
+# this is for mmseqs (depreciated)
+rule extract_cluster:
+  input:
+    fas=rules.cluster.input,
+    tsv="../../data/processed/phylogeny/histones/motifs/clustering/CenH3_NTERM_cluster.tsv", 
+  output:
+    directory("../../data/processed/phylogeny/histones/motifs/clustering/clusters_out")
+  params: c="6"
+  shell:
+    """
+    python ../scripts/extract_clusters.py \
+    -i {input.fas} \
+    -c {input.tsv} \
+    -o {output} \
+    --min-size {params.c}
+    """
+#module load meme
+
+rule extract_clusters_cdhit:
+    input:
+        clstr = "../../data/processed/phylogeny/histones/motifs/clustering/CenH3_NTERM_CDHIT.clstr",
+        fasta = rules.dealign.output
+    output:
+        directory("../../data/processed/phylogeny/histones/motifs/clustering/cdhit_cluster_fastas")
+    params:
+        script = "../scripts/extract_cdhit_clusters_to_fastas.py",
+        n = "7"
+    shell:
+        """
+        python {params.script} {input.clstr} {input.fasta} {output} --min-size {params.n}
+        """
+
+
+rule glam2:
+  input:
+    fas = "../../data/processed/phylogeny/histones/alignments/CenH3_NTERM_Pneumocystis_curated_woCanH3.fasta"
+  output:
+    directory("../../data/processed/phylogeny/histones/motifs/clustering/clusters_out/pneumocystis")
+  params: 
+    w = "10",
+    a = "p"
+
+  shell:
+    "glam2 {params.a} {input.fas} -o {output} -w {params.w}"
+# work but sn faild
+
+import re
+from glob import glob
+
+def sanitize(s):
+    # Allow letters, digits, dash, underscore, dot, comma; replace others with '_'
+    return re.sub(r"[^\w\-\.,]", "_", s)
+
+
+# Gather and sanitize cluster IDs from filenames
+cluster_fastas = glob("../../data/processed/phylogeny/histones/motifs/clustering/cdhit_cluster_fastas/cluster_*.fasta")
+clusters = sorted(
+    sanitize(f.split("/")[-1][len("cluster_") : -len(".fasta")]) for f in cluster_fastas
+)
+
+print("CLUSTERS:", clusters)
+
+rule all:
+    input:
+        expand("../../data/processed/phylogeny/histones/motifs/clustering/glam2_out/{cluster}/.done", cluster=clusters)
+
+rule glam2_per_cluster:
+    input:
+        lambda wc: f"../../data/processed/phylogeny/histones/motifs/clustering/clusters_out/cluster_{wc.cluster}.fasta"
+    output:
+  #out_dir = directory("../../data/processed/phylogeny/histones/motifs/clustering/glam2_out/{cluster}")
+        done = "../../data/processed/phylogeny/histones/motifs/clustering/glam2_out/{cluster}/.done"
+    params:
+      w = "5",
+      a = "p",
+      out_dir = lambda wc: f"../../data/processed/phylogeny/histones/motifs/clustering/clusters_out/cluster_{wc.cluster}"
+    shell:
+        """
+        mkdir -p {output.done.dirname}
+        glam2 {params.a} {input} -O {params.done.dirname} -w {params.w}
+        touch {output.done}
+        """
+# does not worl
+
+# manually
+# module load meme
+#pushd ../../data/processed/phylogeny/histones/motifs/clustering/
+# ls cdhit_cluster_fastas/*.fasta | while read f;do glam2 p $f -O $f.glam2_out;done
+# bash bash_src/run_glam2_on_real.sh
+
+
+# shuffle
+#ls cdhit_cluster_fastas/*.fasta | cut -f 2 -d '/' | cut -f 1 -d '.' | while read f; \
+#  do fasta-shuffle-letters -kmer 1 -protein -seed 123 cdhit_cluster_fastas/$f.fasta shuffled_cdhit_cluster_fastas/$f.shuffled.fasta;done
+
+# bash bash_src/generate_100_shuffles.sh
+# bash_src/run_glam2_on_shuffled.sh
+
+# compute p-value 
+#python ../scripts/compute_empirical_pvalues.py
+
+## compute the IDR
+# bash_src/run_IDR_prediction.sh
+

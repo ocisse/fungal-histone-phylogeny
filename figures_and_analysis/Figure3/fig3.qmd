@@ -1,0 +1,526 @@
+---
+title: "fig3"
+format: html
+editor: visual
+---
+
+### Panel A
+
+```{r}
+library(ape)
+suppressPackageStartupMessages(library(ggtree))
+suppressPackageStartupMessages(library(treeio))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(ggplot2))
+
+# Load trees
+tree1 <- read.tree("NTERM_IQTREE/NTERM_no_partition.treefile")
+tree2 <- read.tree("Species_tree/Species_Tree_With_tags.treefile")
+
+# Clean tip labels:
+tree1$tip.label <- gsub("^([^|]+)\\|.*", "\\1", tree1$tip.label)
+tree2$tip.label <-  gsub("^(Spec\\d+\\|[^/]+).*", "\\1", tree2$tip.label)
+
+# Unroot and prune to shared tips
+shared <- intersect(tree1$tip.label, tree2$tip.label)
+tree1 <- unroot(drop.tip(tree1, setdiff(tree1$tip.label, shared)))
+tree2 <- unroot(drop.tip(tree2, setdiff(tree2$tip.label, shared)))
+
+# Sort tips for alignment
+tree1 <- ladderize(tree1)
+tree2 <- ladderize(tree2)
+
+# Left tree
+p1 <- ggtree(tree1) + geom_tiplab(size = 2, hjust = 1)
+p1_data <- p1$data %>% filter(isTip)
+
+# Right tree (flipped horizontally)
+p2 <- ggtree(tree2) + geom_tiplab(size = 2, hjust = 0)
+p2_data <- p2$data %>% filter(isTip)
+
+# Align by tip labels
+tip_links <- inner_join(p1_data, p2_data, by = "label", suffix = c(".left", ".right"))
+
+# Plot the tanglegram
+ggplot() +
+  # Left tree
+  geom_tree(data = p1$data, aes(x = -x, y = y), size = 0.4) +
+
+  # Right tree
+  geom_tree(data = p2$data, aes(x = x + max(p1$data$x) + 1, y = y), size = 0.4) +
+
+  # Connecting lines
+  geom_curve(data = tip_links,
+             aes(x = -x.left, y = y.left,
+                 xend = x.right + max(p1$data$x) + 1, yend = y.right),
+             curvature = 0.2,
+             alpha = 0.05,
+             color = "steelblue",
+             size = 0.3) +
+
+  # Tree labels
+  annotate("text",
+           x = -max(p1$data$x) - 1,
+           y = max(p1$data$y) + 5,
+           label = "NTERM",
+           hjust = 0,
+           size = 5,
+           fontface = "bold") +
+
+  annotate("text",
+           x = max(p2$data$x) + max(p1$data$x) + 2,
+           y = max(p2$data$y) + 5,
+           label = "Species tree",
+           hjust = 1,
+           size = 5,
+           fontface = "bold") +
+
+  theme_void()
+
+
+#ggsave("NTERM_IQTREE/ggtree_tanglegram_NTERM_vs_SpeciesTree.pdf", width = 14, height = 10, dpi = 300)
+
+```
+
+### **Panel B (CenH3):**
+
+Box plots: dN/dS for HFD vs N-terminal tail - Show N-tail has higher evolutionary rates -
+
+```{r}
+# Load required libraries
+library(ggplot2)
+
+# Read the data, skipping lines starting with #
+data <- read.table("sites_rates/Histone_Curated_Alignment_Unique_Ids_cenH3_nopartition.rate", 
+                   header = TRUE, 
+                   comment.char = "#")
+
+# Create region categories
+data$Region <- ifelse(data$Site <= 46, "N-term (1-46)", 
+                      ifelse(data$Site <= 149, "HFD (47-149)", "Other"))
+
+# Filter to only include N-term and HFD regions
+data_filtered <- data[data$Region %in% c("N-term (1-46)", "HFD (47-149)"), ]
+
+# Set factor levels to control order (N-term first, then HFD)
+data_filtered$Region <- factor(data_filtered$Region, 
+                               levels = c("N-term (1-46)", "HFD (47-149)"))
+
+# Perform Wilcoxon rank-sum test
+nterm_rates <- data_filtered$Rate[data_filtered$Region == "N-term (1-46)"]
+hfd_rates <- data_filtered$Rate[data_filtered$Region == "HFD (47-149)"]
+wilcox_test <- wilcox.test(nterm_rates, hfd_rates)
+
+# Print test results
+cat("Wilcoxon Rank-Sum Test Results:\n")
+cat("W statistic:", wilcox_test$statistic, "\n")
+cat("P-value:", wilcox_test$p.value, "\n")
+cat("N-term median:", median(nterm_rates), "\n")
+cat("HFD median:", median(hfd_rates), "\n\n")
+
+# Create boxplot
+p <- ggplot(data_filtered, aes(x = Region, y = Rate, fill = Region)) +
+  geom_boxplot(outlier.shape = 21, outlier.size = 2.5, outlier.stroke = 0.8,
+               alpha = 0.8, linewidth = 0.8) +
+  labs(title = "Substitution Rates: N-terminal vs HFD",
+       subtitle = sprintf("Wilcoxon test: p = %.2e", wilcox_test$p.value),
+       x = "",
+       y = "Substitution Rate") +
+  theme_classic() +
+  theme(legend.position = "none",
+        plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+        plot.subtitle = element_text(hjust = 0.5, size = 12, color = "gray30"),
+        axis.title.y = element_text(size = 13, face = "bold"),
+        axis.text = element_text(size = 11, color = "black"),
+        axis.line = element_line(linewidth = 0.8),
+        axis.ticks = element_line(linewidth = 0.8)) +
+  scale_fill_manual(values = c("N-term (1-46)" = "grey", 
+                                "HFD (47-149)" = "white"))
+
+# Display plot
+print(p)
+
+# Save plot
+#ggsave("sites_rates/Histone_Curated_Alignment_Unique_Ids_cenH3_nopartition.rate_boxplot.png", p, width = 8, height = 6, dpi = 300)
+
+#ggsave("sites_rates/Histone_Curated_Alignment_Unique_Ids_cenH3_nopartition.rate_boxplot.pdf", 
+#       p, 
+#       width = 8, 
+#       height = 6, 
+#       device = cairo_pdf)
+
+
+
+```
+
+### **Panel B (Canonical H3):**
+
+(CanH3) Evolutionary rate comparison - Box plots: dN/dS for HFD vs N-terminal tail
+
+```{r}
+# Load required libraries
+library(ggplot2)
+
+# Read the data, skipping lines starting with #
+data <- read.table("sites_rates/Histone_Curated_Alignment_Unique_Ids_canH3_nopartition.rate", 
+                   header = TRUE, 
+                   comment.char = "#")
+
+# Create region categories
+data$Region <- ifelse(data$Site <= 46, "N-term (1-46)", 
+                      ifelse(data$Site <= 149, "HFD (47-149)", "Other"))
+
+# Filter to only include N-term and HFD regions
+data_filtered <- data[data$Region %in% c("N-term (1-46)", "HFD (47-149)"), ]
+
+# Set factor levels to control order (N-term first, then HFD)
+data_filtered$Region <- factor(data_filtered$Region, 
+                               levels = c("N-term (1-46)", "HFD (47-149)"))
+
+# Perform Wilcoxon rank-sum test
+nterm_rates <- data_filtered$Rate[data_filtered$Region == "N-term (1-46)"]
+hfd_rates <- data_filtered$Rate[data_filtered$Region == "HFD (47-149)"]
+wilcox_test <- wilcox.test(nterm_rates, hfd_rates)
+
+# Print test results
+cat("Wilcoxon Rank-Sum Test Results:\n")
+cat("W statistic:", wilcox_test$statistic, "\n")
+cat("P-value:", wilcox_test$p.value, "\n")
+cat("N-term median:", median(nterm_rates), "\n")
+cat("HFD median:", median(hfd_rates), "\n\n")
+
+# Create boxplot
+
+p <- ggplot(data_filtered, aes(x = Region, y = Rate, fill = Region)) +
+  geom_boxplot(outlier.shape = 21, outlier.size = 2.5, outlier.stroke = 0.8,
+               alpha = 0.8, linewidth = 0.8) +
+  labs(title = "Substitution Rates: N-terminal vs HFD",
+       subtitle = sprintf("Wilcoxon test: p = %.2e", wilcox_test$p.value),
+       x = "",
+       y = "Substitution Rate") +
+  theme_classic() +
+  theme(legend.position = "none",
+        plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+        plot.subtitle = element_text(hjust = 0.5, size = 12, color = "gray30"),
+        axis.title.y = element_text(size = 13, face = "bold"),
+        axis.text = element_text(size = 11, color = "black"),
+        axis.line = element_line(linewidth = 0.8),
+        axis.ticks = element_line(linewidth = 0.8)) +
+  scale_fill_manual(values = c("N-term (1-46)" = "grey", 
+                                "HFD (47-149)" = "white")) +
+  scale_y_continuous(limits = c(0, 4), breaks = seq(0, 4, 1))
+
+
+# Display plot
+print(p)
+
+# Save plot
+#ggsave("sites_rates/Histone_Curated_Alignment_Unique_Ids_canH3_nopartition.rate_boxplot.png", p, width = 8, height = 6, dpi = 300)
+
+# Save plot
+
+#ggsave("sites_rates/Histone_Curated_Alignment_Unique_Ids_canH3_nopartition.rate_boxplot.pdf", 
+#       p, 
+#       width = 8, 
+#       height = 6, 
+#       device = cairo_pdf)
+```
+
+## Panel C-D
+
+Panel C: Length variation • Histogram of N-terminal tail lengths across fungi • Color by clade • Show extreme length variation (e.g., 50-300 amino acids)
+
+```{r}
+# Load required libraries
+library(ggplot2)
+library(seqinr)
+library(dplyr)
+
+# File paths
+taxonomy_file <- "histone_class_taxonomy_mapping_revised.csv"
+#fasta_file <- "Histone_Curated_Alignment_Unique_Ids_cenH3.fasta"
+fasta_file <- "NTERM_IQTREE/Histone_Curated_Alignment_Unique_Ids_NTERM_revised_CenH3.fasta"
+# Read taxonomy mapping
+taxonomy <- read.csv(taxonomy_file, stringsAsFactors = FALSE)
+
+cat("Taxonomy entries:", nrow(taxonomy), "\n\n")
+
+# Read FASTA file
+fasta_data <- read.fasta(fasta_file, seqtype = "AA", as.string = TRUE)
+
+cat("FASTA sequences:", length(fasta_data), "\n\n")
+
+# Function to calculate N-terminal length (position before first non-gap character)
+calculate_nterm_length <- function(seq_string) {
+  # Remove gaps
+  seq_nogaps <- gsub("-", "", seq_string)
+  # Return length of ungapped sequence (total protein length)
+  return(nchar(seq_nogaps))
+}
+
+# Function to calculate amino acid composition
+calculate_aa_composition <- function(seq_string) {
+  # Remove gaps
+  seq_nogaps <- gsub("-", "", seq_string)
+  
+  # Count each amino acid
+  aa_list <- c("A", "C", "D", "E", "F", "G", "H", "I", "K", "L", 
+               "M", "N", "P", "Q", "R", "S", "T", "V", "W", "Y")
+  
+  total_aa <- nchar(seq_nogaps)
+  if (total_aa == 0) return(rep(0, length(aa_list)))
+  
+  composition <- sapply(aa_list, function(aa) {
+    (nchar(seq_nogaps) - nchar(gsub(aa, "", seq_nogaps))) / total_aa * 100
+  })
+  
+  return(composition)
+}
+
+# Extract species IDs and calculate lengths and composition
+results <- data.frame(
+  ProtID = character(),
+  Length = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Store composition data separately
+composition_list <- list()
+
+for (i in 1:length(fasta_data)) {
+  seq_name <- names(fasta_data)[i]
+  # Extract ProtID (pattern: SpecN|PROTID/coordinates - remove /coordinates and anything after)
+  # Example: "Spec1768|WWC61638.1/1-112 WWC61638.1..." -> "Spec1768|WWC61638.1"
+  prot_id <- sub("/.*", "", seq_name)  # Remove everything from "/" onwards
+  prot_id <- sub("\\s.*", "", prot_id)  # Remove everything from space onwards
+  
+  # Get sequence
+  seq_string <- as.character(fasta_data[[i]])
+  
+  # Calculate length
+  length_val <- calculate_nterm_length(seq_string)
+  
+  # Calculate composition
+  composition <- calculate_aa_composition(seq_string)
+  
+  results <- rbind(results, data.frame(ProtID = prot_id, Length = length_val))
+  composition_list[[prot_id]] <- composition
+}
+
+# Convert composition list to data frame
+composition_df <- do.call(rbind, composition_list)
+composition_df <- as.data.frame(composition_df)
+composition_df$ProtID <- rownames(composition_df)
+rownames(composition_df) <- NULL
+
+# Check a few examples
+cat("Example ProtIDs extracted:\n")
+print(head(results$ProtID, 10))
+
+# Merge with taxonomy
+data_merged <- merge(results, taxonomy, by = "ProtID", all.x = TRUE)
+
+# Remove entries without taxonomy info
+data_merged <- data_merged[!is.na(data_merged$Subphylum), ]
+
+# Print data dimensions
+cat("\n=== Data Summary ===\n")
+cat("Total sequences processed:", nrow(results), "\n")
+cat("Sequences with taxonomy info:", nrow(data_merged), "\n")
+cat("Sequences without taxonomy info:", sum(is.na(merge(results, taxonomy, by = "ProtID", all.x = TRUE)$Subphylum)), "\n\n")
+
+# Print summary statistics
+cat("Length Summary Statistics:\n")
+cat("Min:", min(data_merged$Length), "\n")
+cat("Max:", max(data_merged$Length), "\n")
+cat("Mean:", round(mean(data_merged$Length), 2), "\n")
+cat("Median:", median(data_merged$Length), "\n\n")
+
+cat("Counts by Subphylum:\n")
+print(table(data_merged$Subphylum))
+
+# Define color palette for clades
+clade_colors <- c(
+  "Ascomycota" = "#E41A1C",
+  "Basidiomycota" = "#377EB8",
+  "Mucoromycota" = "#4DAF4A",
+  "Zoopagomycota" = "#984EA3",
+  "Chytridiomycota" = "#FF7F00",
+  "Blastocladiomycota" = "#FFFF33",
+  "Neocallimastigomycota" = "#A65628"
+)
+
+# Create histogram
+p <- ggplot(data_merged, aes(x = Length, fill = Subphylum)) +
+  geom_histogram(binwidth = 5, color = "black", linewidth = 0.3, alpha = 0.8) +
+  labs(title = "N-terminal Length Variation Across Fungal Clades",
+       x = "Protein Length (amino acids)",
+       y = "Count",
+       fill = "Subphylum") +
+  theme_classic() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+        axis.title = element_text(size = 13, face = "bold"),
+        axis.text = element_text(size = 11, color = "black"),
+        legend.title = element_text(size = 12, face = "bold"),
+        legend.text = element_text(size = 10),
+        legend.position = "right",
+        axis.line = element_line(linewidth = 0.8),
+        axis.ticks = element_line(linewidth = 0.8)) +
+  scale_fill_manual(values = clade_colors, 
+                    na.value = "gray50")
+
+# Display plot
+print(p)
+
+# Save plot
+ggsave("nterm_length_histogram.png", p, width = 10, height = 6, dpi = 300)
+ggsave("nterm_length_histogram.pdf", 
+       p, 
+       width = 8, 
+       height = 6, 
+       device = cairo_pdf)
+
+# Optional: Create a faceted version by subphylum
+p2 <- ggplot(data_merged, aes(x = Length, fill = Subphylum)) +
+  geom_histogram(binwidth = 5, color = "black", linewidth = 0.3, alpha = 0.8) +
+  facet_wrap(~Subphylum, scales = "free_y", ncol = 2) +
+  labs(title = "N-terminal Length Variation by Fungal Clade",
+       x = "Protein Length (amino acids)",
+       y = "Count") +
+  theme_classic() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+        axis.title = element_text(size = 12, face = "bold"),
+        axis.text = element_text(size = 10, color = "black"),
+        legend.position = "none",
+        strip.background = element_rect(fill = "gray90", color = "black"),
+        strip.text = element_text(size = 11, face = "bold")) +
+  scale_fill_manual(values = clade_colors, na.value = "gray50")
+
+print(p2)
+ggsave("nterm_length_histogram_faceted.png", p2, width = 12, height = 8, dpi = 300)
+
+# ===== AMINO ACID COMPOSITION ANALYSIS =====
+
+# Merge composition with taxonomy
+composition_merged <- merge(composition_df, taxonomy, by = "ProtID", all.x = TRUE)
+composition_merged <- composition_merged[!is.na(composition_merged$Subphylum), ]
+
+# Calculate key amino acid groups
+composition_merged$Proline <- composition_merged$P
+composition_merged$Serine <- composition_merged$S
+composition_merged$Acidic <- composition_merged$D + composition_merged$E
+composition_merged$Basic <- composition_merged$K + composition_merged$R
+composition_merged$Hydrophobic <- composition_merged$A + composition_merged$V + 
+                                   composition_merged$I + composition_merged$L + 
+                                   composition_merged$M + composition_merged$F + 
+                                   composition_merged$W
+
+# Calculate mean composition by subphylum
+comp_by_clade <- composition_merged %>%
+  group_by(Subphylum) %>%
+  summarise(
+    Proline = mean(Proline, na.rm = TRUE),
+    Serine = mean(Serine, na.rm = TRUE),
+    Acidic = mean(Acidic, na.rm = TRUE),
+    Basic = mean(Basic, na.rm = TRUE),
+    Hydrophobic = mean(Hydrophobic, na.rm = TRUE),
+    n = n()
+  )
+
+print(comp_by_clade)
+
+# 1. Stacked bar plot of key amino acid groups
+comp_long <- composition_merged %>%
+  select(ProtID, Subphylum, Proline, Serine, Acidic, Basic, Hydrophobic) %>%
+  tidyr::pivot_longer(cols = c(Proline, Serine, Acidic, Basic, Hydrophobic),
+                      names_to = "AA_Group", values_to = "Percentage")
+
+comp_summary <- comp_long %>%
+  group_by(Subphylum, AA_Group) %>%
+  summarise(Mean_Percentage = mean(Percentage, na.rm = TRUE), .groups = "drop")
+
+p3 <- ggplot(comp_summary, aes(x = Subphylum, y = Mean_Percentage, fill = AA_Group)) +
+  geom_bar(stat = "identity", position = "stack", color = "black", linewidth = 0.3) +
+  labs(title = "Amino Acid Composition by Fungal Clade",
+       x = "",
+       y = "Percentage (%)",
+       fill = "AA Group") +
+  theme_classic() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+        axis.title = element_text(size = 13, face = "bold"),
+        axis.text = element_text(size = 11, color = "black"),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.title = element_text(size = 12, face = "bold"),
+        legend.text = element_text(size = 10),
+        axis.line = element_line(linewidth = 0.8)) +
+  
+  scale_fill_manual(values = c("Proline" = "#ECEFF1", 
+                             "Serine" = "#CFD8DC",
+                             "Acidic" = "#B0BEC5", 
+                             "Basic" = "#90A4AE",
+                             "Hydrophobic" = "#607D8B"))
+  #scale_fill_manual(values = c("Proline" = "#F0F0F0", 
+  #                           "Serine" = "#CCCCCC",
+  #                           "Acidic" = "#999999", 
+  #                           "Basic" = "#666666",
+  #                           "Hydrophobic" = "#404040"))
+
+  #scale_fill_manual(values = c("Proline" = "#E41A1C", "Serine" = "#377EB8",
+  #                             "Acidic" = "#4DAF4A", "Basic" = "#984EA3",
+  #                            "Hydrophobic" = "#FF7F00"))
+
+print(p3)
+ggsave("aa_composition_stacked.png", p3, width = 10, height = 7, dpi = 300)
+
+ggsave("aa_composition_stacked.pdf", 
+       p3, 
+       width = 8, 
+       height = 6, 
+       device = cairo_pdf)
+
+# 2. Boxplots for enrichment of specific amino acids
+p4 <- ggplot(comp_long %>% filter(AA_Group %in% c("Proline", "Serine", "Acidic")),
+             aes(x = Subphylum, y = Percentage, fill = Subphylum)) +
+  geom_boxplot(outlier.shape = 21, outlier.size = 1.5, alpha = 0.7, linewidth = 0.6) +
+  facet_wrap(~AA_Group, scales = "free_y", ncol = 3) +
+  labs(title = "Enrichment of Key Amino Acids Across Fungal Clades",
+       x = "",
+       y = "Percentage (%)") +
+  theme_classic() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+        axis.title = element_text(size = 12, face = "bold"),
+        axis.text.x = element_text(angle = 45, hjust = 1, size = 9),
+        axis.text.y = element_text(size = 10),
+        legend.position = "none",
+        strip.background = element_rect(fill = "gray90", color = "black"),
+        strip.text = element_text(size = 12, face = "bold")) +
+  scale_fill_manual(values = clade_colors, na.value = "gray50")
+
+print(p4)
+ggsave("aa_enrichment_boxplots.png", p4, width = 14, height = 5, dpi = 300)
+
+# 3. Heatmap of amino acid composition
+comp_heatmap <- composition_merged %>%
+  group_by(Subphylum) %>%
+  summarise(across(A:Y, ~mean(., na.rm = TRUE))) %>%
+  tidyr::pivot_longer(cols = A:Y, names_to = "AA", values_to = "Percentage")
+
+p5 <- ggplot(comp_heatmap, aes(x = AA, y = Subphylum, fill = Percentage)) +
+  geom_tile(color = "white", linewidth = 0.5) +
+  geom_text(aes(label = sprintf("%.1f", Percentage)), size = 3, color = "black") +
+  labs(title = "Amino Acid Composition Heatmap by Clade",
+       x = "Amino Acid",
+       y = "",
+       fill = "Percentage (%)") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+        axis.title = element_text(size = 12, face = "bold"),
+        axis.text = element_text(size = 10, color = "black"),
+        legend.title = element_text(size = 11, face = "bold"),
+        panel.grid = element_blank()) +
+  scale_fill_gradient2(low = "#2166AC", mid = "#F7F7F7", high = "#B2182B",
+                       midpoint = median(comp_heatmap$Percentage))
+
+print(p5)
+ggsave("aa_composition_heatmap.png", p5, width = 14, height = 6, dpi = 300)
+```

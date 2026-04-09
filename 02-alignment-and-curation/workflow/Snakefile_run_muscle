@@ -1,0 +1,11 @@
+
+#
+rule run_muscle_msa:
+  input:
+    histone_h3_seqs = "../../../data/processed/Phylogeny_Analysis/Histones/Histone_H3_Analysis/H3_Sequences/histone_H3_sequences_deduplicated.fasta",
+  output:
+    h3_muscle = "../../../data/processed/Phylogeny_Analysis/Histones/Alignments/Histone_alignment_muscle",
+  params:
+    histone_log_file = "../../../data/processed/Phylogeny_Analysis/Histones/Alignments/histone_alignment.log",
+  shell:
+    "muscle -in {input.histone_h3_seqs} -log {params.histone_log_file} -out {output.histone_h3_seqs}"

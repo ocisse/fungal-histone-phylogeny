@@ -1,0 +1,19 @@
+
+
+rule unique_species_ids:
+  input:
+    histones_msa = "../../../../data/processed/Phylogeny_Analysis/Histones/Alignments/Histone_Curated_Alignment_Clean_Ids_Deduplicated.fasta",
+    cenpc_msa = "../../../../data/processed/Phylogeny_Analysis/CENPC/Alignments/CENPC_Curated_ids_removed.fasta",
+    cenpt_msa = "../../../../data/processed/Phylogeny_Analysis/CENPT/Alignments/CENPT_Curated_id_removed.fasta"
+  output:
+    histone_msa_unique = "../../../../data/processed/Phylogeny_Analysis/Histones/Alignments/Histone_Curated_Alignment_Unique_Ids.fasta",
+    cenpc_msa_unique = "../../../../data/processed/Phylogeny_Analysis/CENPC/Alignments/CENPC_Curated_Unique_Ids.fasta",
+    cenpt_msa_unique = "../../../../data/processed/Phylogeny_Analysis/CENPT/Alignments/CENPT_Curated_Unique_Ids.fasta"
+  params:
+    python_script = "add_species_identifiers_to_fasta.py"
+  shell:
+    """
+    python ../../python_scripts/{input.histones_msa} {output.histone_msa_unique} 
+    python ../../python_scripts/{input.cenpc_msa} {output.cenpc_msa_unique} 
+    python ../../python_scripts/{input.cenpt_msa} {output.cenpt_msa_unique}
+    """

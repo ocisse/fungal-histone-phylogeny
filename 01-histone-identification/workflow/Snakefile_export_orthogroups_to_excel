@@ -1,0 +1,12 @@
+
+
+rule export_to_excel:
+  input:
+    input_directory = "../../../../data/processed/OrthoFinder_Data/orthogroups_Feb13",
+    ordered_protein_names "../../../../OrthoFinder_Data/orthogroups_Feb13/ordered_protein_names"
+  output:
+    output_excel_file = "../../../../data/processed/OrthoFinder_Data/orthogroups_Feb13/all_orthologs.xlsx"
+  params:
+    python_script = "write_orthologs_to_excel.py"
+  shell:
+    "python ../../python_scripts/{params.python_script} {input.input_directory} {input.ordered_protein_names} {output.output_excel_file}"

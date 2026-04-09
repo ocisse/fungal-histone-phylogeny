@@ -1,0 +1,25 @@
+
+
+rule unique_ids:
+  input:
+    histone_msa = "../../../../data/processed/Phylogeny_Analysis/Histones/Alignments/Histone_Curated_Alignment_Unique_Ids.fasta",
+    species_treefile = "../../../../data/processed/PHYling/Species_Tree.treefile"
+  output:
+    species_treefile_with_tags = "../../../../data/processed/PHYling/Species_Tree_With_tags.treefile"
+  params:
+    python_script = "add_species_identifiers_to_species_tree.py"
+  shell:
+    "python ../../python_scripts/{params.python_script} {input.histone_msa} {input.species_treefile} {output.species_treefile_with_tags}"
+
+rule convert_to_organism_names:
+  input:
+    species_treefile = rules.unique_ids.output.species_treefile_with_tags,
+    msa = "../../../../data/processed/PHYling"
+  output:
+    species_tree_with_clean_org_names = "../../../../data/processed/PHYling/Species_Tree_Clean_Org_Names.treefile"
+  params:
+    python_script = "get_species_from_species_tags.py"
+  shell:
+    "python ../../python_scripts/{params.python_script} {input.species_treefile} {input.msa} {output.species_tree_with_clean_org_names}"
+
+

@@ -1,0 +1,8 @@
+
+rule run_orthofinder:
+  input:
+    proteome_directory = "../../../../data/raw/all_fungal_proteomes/ncbi_dataset/data"
+  output:
+    output_directory = diretory("../../../../data/processed/OrthoFinder_Data/OrthoFinder_Feb13")
+  shell:
+    "orthofinder -f {input.proteome_directory} -o {output.output_directory}"

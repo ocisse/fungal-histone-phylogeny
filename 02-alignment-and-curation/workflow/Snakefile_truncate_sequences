@@ -1,0 +1,6 @@
+
+rule truncate_sequences:
+  params:
+    python_script = "../python_scripts/random_seqs_hmm.py"
+  shell:
+    "python {params.python_script}"

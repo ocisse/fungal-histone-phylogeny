@@ -1,0 +1,11 @@
+
+
+rule orthogroup_dictionaries:
+  input:
+    orthogroup_tsv_file = "../../../../data/processed/OrthoFinder_Data/OrthoFinder_Feb13/Results_Feb13/Phylogenetic_Hierarchical_Orthogroups/N0.tsv"
+  output:
+    orthogroup_dictionary_file = "../../../../data/processed/OrthoFinder_Data/orthogroups/orthogroups.tsv"
+  params:
+    python_script = "create_dictionary_of_all_orthogroups.py"
+  shell:
+    "python ../../python_scripts/{params.python_script} {input.orthogroup_tsv_file} {output.orthogroup_tsv_file}"

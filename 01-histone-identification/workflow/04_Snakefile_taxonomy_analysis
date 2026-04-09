@@ -1,0 +1,40 @@
+rule get_taxon_ids:
+  input:
+    ncbi_datasets_json_file = "../../../../data/raw/all_fungal_proteomes/ncbi_dataset/assembly_data_report.json",
+    proteome_file = "../../../../data/processed/Phylogeny_Analysis/Fungal_Proteomes_for_Hmmsearch/proteomes_for_hmmsearch.txt"
+  output:
+    taxon_id_outfile = "../../../../data/processed/Phylogeny_Analysis/Fungal_Proteomes_for_Hmmsearch/taxon_ids_plus_org_name.txt"
+  params:
+    python_file = "get_fungal_proteome_taxon_id.py"
+  shell:
+    "python ../../python_scripts/{params.python_file} {input.ncbi_datasets_json_file} {input.proteome_file} {output.taxon_id_outfile}"
+
+
+rule map_taxon_ids_to_sequences:
+  input:
+    taxon_ids_and_organism_names = rules.get_taxon_ids.output.taxon_id_outfile,
+    fasta_sequence_file = "../../../../data/processed/Phylogeny_Analysis/Histones/Histone_H3_Analysis/H3_Sequences/histone_H3_sequences_deduplicated.fasta"
+  output:
+    sequence_to_taxid_mapping = "../../../../data/processed/Phylogeny_Analysis/Histones/Histone_Taxonomy/taxon_id_to_sequence_mapping.txt"
+  params:
+    python_file = "map_fungal_org_to_id.py"
+  shell:
+    "python ../../python_scripts/{params.python_file} {input.taxon_ids_and_organism_names} {input.fasta_sequence_file} {output.sequence_to_taxid_mapping}"
+
+rule download_ncbi_tax:
+  shell:
+    """mkdir ../../../../data/processed/Phylogeny_Analysis/Histones/Histone_Taxonomy/ncbi-taxdump && cd ../../../../data/processed/Phylogeny_Analysis/Histones/Histone_Taxonomy
+    wget ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz
+    tar -xvzf taxdump.tar.gz"""
+
+rule mmseqs_taxonomy:
+  input:
+    taxon_id_mapping = rules.map_taxon_ids_to_sequences.output.sequence_to_taxid_mapping,
+    ncbi_taxonomy_db = "../../../../data/processed/Phylogeny_Analysis/Histones/Histone_Taxonomy/ncbi-taxdump"
+  output:
+    database = "../../../../data/processed/Phylogeny_Analysis/Histones/Histone_Taxonomy/HistoneDB"
+  shell:
+    """mmseqs createtaxdb HistoneDB /tmp --ncbi-tax-dump {input.ncbi_taxonomy_db} --tax-mapping-file {input.taxon_id_mapping}
+    mmseqs taxonomy HistoneDB HistoneDB taxonomyResult /tmp
+    mmseqs createtsv HistoneDB taxonomyResult taxonomyResult/taxonomyResult.tsv
+    mmseqs taxonomyreport HistoneDB taxonomyResult taxonomyResult/krona_report.html --report-mode 1"""

@@ -1,0 +1,133 @@
+###
+### detecting fast evolving sites
+rule pmsr:
+    input:
+        aln = "../../data/processed/phylogeny/histones/alignments/Histone_Curated_Alignment_Unique_Ids_HFD.fasta", 
+        treefile = "../../data/processed/phylogeny/histones/HFD_no_partition.treefile",
+    output:
+        rates = "../../data/processed/phylogeny/histones/HFD_no_partition.siterates" 
+    threads: 6
+    params:
+        m = "Q.INSECT+R8",
+    shell:
+        """
+        ../tools/iqtree-3.0.1-Linux/bin/iqtree3 \
+            -s {input.aln} \
+            -te {input.treefile} \
+            -m {params.m} \
+            -wsr \
+            -nt AUTO \
+            -v \
+        
+        mv {input.aln}.siterates {output.rates}
+        """
+
+rule pmsr_cenh3_full:
+    input:
+        aln = "../../data/processed/phylogeny/histones/alignments/Histone_Curated_Alignment_Unique_Ids_cenH3.fasta",
+        partition = "../../../AIP_2025/data/processed/Phylogeny_Analysis/Histones/Alignments/H3_Partitions.txt"
+    output:
+        treefile = "../../data/processed/phylogeny/histones/trees/iqtree/Histone_Curated_Alignment_Unique_Ids_cenH3.treefile",
+        rates = "../../data/processed/phylogeny/histones/trees/Histone_Curated_Alignment_Unique_Ids_cenH3.rate"
+    threads: 6
+    params:
+        m = "MFP+MERGE",
+        b = "1000",
+        a = "1000",
+        prefix = "../../data/processed/phylogeny/histones/trees/iqtree/Histone_Curated_Alignment_Unique_Ids_cenH3" 
+    shell:
+        """
+        ../tools/iqtree-3.0.1-Linux/bin/iqtree3 \
+            -s {input.aln} \
+            -p {input.partition} \
+            -m {params.m} \
+            -B {params.b} \
+            -alrt {params.a} \
+            -wsr \
+            -nt AUTO \
+            -v \
+            --prefix {params.prefix}
+        """
+
+rule pmsr_cenh3_full_noPartion:
+    input:
+        aln = "../../data/processed/phylogeny/histones/alignments/Histone_Curated_Alignment_Unique_Ids_cenH3.fasta",
+    output:
+        treefile = "../../data/processed/phylogeny/histones/trees/iqtree/Histone_Curated_Alignment_Unique_Ids_cenH3_nopartition.treefile",
+        rates = "../../data/processed/phylogeny/histones/trees/Histone_Curated_Alignment_Unique_Ids_cenH3_nopartition.rate"
+    threads: 6
+    params:
+        m = "MFP",
+        b = "1000",
+        a = "1000",
+        prefix = "../../data/processed/phylogeny/histones/trees/iqtree/Histone_Curated_Alignment_Unique_Ids_cenH3_nopartition" 
+    shell:
+        """
+        ../tools/iqtree-3.0.1-Linux/bin/iqtree3 \
+            -s {input.aln} \
+            -m {params.m} \
+            -B {params.b} \
+            -alrt {params.a} \
+            -wsr \
+            -nt AUTO \
+            -v \
+            --prefix {params.prefix}
+        """
+
+
+rule pmsr_can3_full:
+    input:
+        aln = "../../data/processed/phylogeny/histones/alignments/Histone_Curated_Alignment_Unique_Ids_canonicalH3.fasta",
+        partition = "../../../AIP_2025/data/processed/Phylogeny_Analysis/Histones/Alignments/H3_Partitions.txt"
+    output:
+        treefile = "../../data/processed/phylogeny/histones/trees/iqtree/Histone_Curated_Alignment_Unique_Ids_canH3.treefile",
+        rates = "../../data/processed/phylogeny/histones/trees/Histone_Curated_Alignment_Unique_Ids_canH3.rate"
+    threads: 6
+    params:
+        m = "MFP+MERGE",
+        b = "1000",
+        a = "1000",
+        prefix = "../../data/processed/phylogeny/histones/trees/iqtree/Histone_Curated_Alignment_Unique_Ids_canH3" 
+    shell:
+        """
+        ../tools/iqtree-3.0.1-Linux/bin/iqtree3 \
+            -s {input.aln} \
+            -p {input.partition} \
+            -m {params.m} \
+            -B {params.b} \
+            -alrt {params.a} \
+            -wsr \
+            -nt AUTO \
+            -v \
+            --prefix {params.prefix}
+        """
+rule pmsr_canh3_full_nopartition:
+    input:
+        aln = "../../data/processed/phylogeny/histones/alignments/Histone_Curated_Alignment_Unique_Ids_canonicalH3.fasta",
+    output:
+        treefile = "../../data/processed/phylogeny/histones/trees/iqtree/Histone_Curated_Alignment_Unique_Ids_canH3_nopartition.treefile",
+        rates = "../../data/processed/phylogeny/histones/trees/Histone_Curated_Alignment_Unique_Ids_canH3_nopartition.rate"
+    threads: 6
+    params:
+        m = "MFP",
+        b = "1000",
+        a = "1000",
+        prefix = "../../data/processed/phylogeny/histones/trees/iqtree/Histone_Curated_Alignment_Unique_Ids_canH3_nopartition" 
+    shell:
+        """
+        ../tools/iqtree-3.0.1-Linux/bin/iqtree3 \
+            -s {input.aln} \
+            -m {params.m} \
+            -B {params.b} \
+            -alrt {params.a} \
+            -wsr \
+            -nt AUTO \
+            -v \
+            --prefix {params.prefix}
+        """
+# testing monophyly/polyphyly of the N-term using IQtree
+# Testing constrained tree
+# https://iqtree.github.io/doc/Advanced-Tutorial#testing-constrained-tree
+
+
+
