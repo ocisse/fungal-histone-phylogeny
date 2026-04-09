@@ -1,0 +1,74 @@
+# ===================================================================
+# Conda Environment for the Fungal Histone Phylogenetics Project
+#
+# This file specifies all software dependencies for the analysis.
+#
+# To create this environment from scratch, run:
+#   conda env create -f environment.yml
+#
+# To activate the environment, run:
+#   conda activate fungal-histone-phylogeny
+#
+# To update the environment after modifying this file, run:
+#   conda env update --file environment.yml --prune
+# ===================================================================
+
+name: fungal-histone-phylogeny
+
+channels:
+  # The order of channels is critical for resolving dependencies correctly.
+  # 1. conda-forge: Community-maintained, most up-to-date general packages.
+  # 2. bioconda: Community-maintained bioinformatics tools.
+  # 3. defaults: Base conda channel.
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+  # --- Core Workflow & System Tools ---
+  # Pinning versions is crucial for long-term reproducibility.
+  - python=3.9
+  - snakemake-minimal=7.15.2
+  - mamba  # A faster conda solver, highly recommended
+
+  # --- Bioinformatics Tools (from Bioconda) ---
+  - hmmer=3.3.2
+  - mafft=7.490
+  - trimal=1.4.1   # For alignment trimming
+  - iqtree=3.0.1
+  - blast=2.12.0
+  - iupred3=1.0.5
+  - beast2=2.7.7
+  - beagle-lib=3.1.2
+
+
+  # --- R Environment and Core Packages ---
+  # Installing R and key packages via conda ensures better compatibility.
+  - r-base=4.2.2
+  - r-essentials   # A bundle of common R packages
+  - r-tidyverse    # Includes ggplot2, dplyr, readr, etc.
+  - r-quarto       # For rendering .qmd notebooks
+
+  # --- R Phylogenetics Stack ---
+  - r-ape
+  - r-phytools
+  - r-ggtree
+
+  # --- Other Useful R Packages ---
+  - r-rcolorbrewer
+  - r-stringr
+
+  # --- Core Python Data Science Libraries ---
+  - pandas
+  - numpy
+  - matplotlib
+  - seaborn
+
+  # --- Pip Dependencies ---
+  # Use this section ONLY for packages that are not available on conda channels.
+  # This section is executed *after* all conda packages are installed.
+  - pip:
+    # CIAlign is primarily distributed via Pip.
+    # Replace with the exact version you used for perfect reproducibility.
+    - cialign==1.1.4
+
